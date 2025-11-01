@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import axios from '../../../lib/api'
-import { useAuthContext } from '../../../context/AuthContext'
+import AuthGuard from '../../../components/AuthGuard'
 
 function normalizeCategories(input: string){
   return input.split(',').map(s => s.trim()).filter(Boolean)
@@ -10,13 +10,6 @@ function normalizeCategories(input: string){
 export default function EditBookPage(){
   const router = useRouter()
   const { id } = router.query as { id?: string }
-  const { hasRole } = useAuthContext()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
-  useEffect(() => {
-    if(mounted && !hasRole(['ADMIN','LIBRARIAN'])) router.replace('/books')
-  }, [mounted, hasRole, router])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,9 +91,10 @@ export default function EditBookPage(){
   function updateField(k: string, v: any){ setForm((f:any) => ({ ...f, [k]: v })) }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Editar libro</h1>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <AuthGuard roles={['ADMIN', 'LIBRARIAN']}>
+      <div className="container mx-auto p-6">
+        <h1 className="mb-4 text-2xl font-bold">Editar libro</h1>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <label className="block">
             <div className="text-sm font-medium">ISBN</div>
@@ -152,52 +146,51 @@ export default function EditBookPage(){
           </label>
 
           <div className="flex items-center gap-3">
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
-            <button type="button" onClick={() => router.push(`/books/${id}`)} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
-            {hasRole(['ADMIN','LIBRARIAN']) && (
-              <div className="ml-2">
-                {!showConfirmDelete ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmDelete(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded"
-                  >Eliminar libro</button>
-                ) : (
-                  <div className="p-3 border rounded bg-red-50">
-                    <div className="text-sm font-medium text-red-700">Confirma eliminación</div>
-                    <div className="text-xs text-gray-600 mb-2">¿Seguro que deseas eliminar este libro? Esta acción no se puede deshacer.</div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if(!id) return
-                          setLoading(true)
-                          setError(null)
-                          try{
-                            await axios.delete(`/books/${id}`)
-                            router.push('/books')
-                          }catch(err:any){
-                            setError(err?.response?.data?.message || String(err))
-                          }finally{ setLoading(false); setShowConfirmDelete(false) }
-                        }}
-                        disabled={loading}
-                        className="px-3 py-1 bg-red-600 text-white rounded"
-                      >Confirmar</button>
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmDelete(false)}
-                        disabled={loading}
-                        className="px-3 py-1 bg-gray-200 rounded"
-                      >Cancelar</button>
-                    </div>
+            <button type="submit" disabled={loading} className="rounded bg-blue-600 px-4 py-2 text-white">Guardar</button>
+            <button type="button" onClick={() => router.push(`/books/${id}`)} className="rounded bg-gray-200 px-4 py-2">Cancelar</button>
+            <div className="ml-2">
+              {!showConfirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmDelete(true)}
+                  className="rounded bg-red-600 px-4 py-2 text-white"
+                >Eliminar libro</button>
+              ) : (
+                <div className="rounded border border-red-200 bg-red-50 p-3">
+                  <div className="text-sm font-medium text-red-700">Confirma eliminación</div>
+                  <div className="mb-2 text-xs text-gray-600">¿Seguro que deseas eliminar este libro? Esta acción no se puede deshacer.</div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if(!id) return
+                        setLoading(true)
+                        setError(null)
+                        try{
+                          await axios.delete(`/books/${id}`)
+                          router.push('/books')
+                        }catch(err:any){
+                          setError(err?.response?.data?.message || String(err))
+                        }finally{ setLoading(false); setShowConfirmDelete(false) }
+                      }}
+                      disabled={loading}
+                      className="rounded bg-red-600 px-3 py-1 text-white"
+                    >Confirmar</button>
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmDelete(false)}
+                      disabled={loading}
+                      className="rounded bg-gray-200 px-3 py-1"
+                    >Cancelar</button>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
             {error && <div className="text-sm text-red-600">{error}</div>}
           </div>
         </div>
       </form>
-    </div>
+      </div>
+    </AuthGuard>
   )
 }

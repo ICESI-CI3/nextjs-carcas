@@ -18,6 +18,9 @@ export default function BookCard({ book }: { book: any }){
   // compute copies info
   const copies = book.copies || []
   const availableCount = copies.filter((c: any) => c.status === 'available').length
+  const { isAuthenticated } = useAuthContext()
+
+  const canReserve = isAuthenticated && availableCount > 0
 
   return (
     <article className="bg-white rounded shadow overflow-hidden md:flex">
@@ -48,7 +51,16 @@ export default function BookCard({ book }: { book: any }){
 
         <div className="mt-4 flex items-center gap-3">
           <Link href={`/books/${book.id}`} className="px-3 py-2 bg-blue-600 text-white rounded">Ver detalle</Link>
-          <button className="px-3 py-2 bg-green-600 text-white rounded">Reservar</button>
+          {canReserve ? (
+            <Link
+              href={{ pathname: `/books/${book.id}`, query: { action: 'reserve' } }}
+              className="px-3 py-2 bg-green-600 text-white rounded"
+            >
+              Reservar
+            </Link>
+          ) : (
+            <span className="px-3 py-2 text-sm text-gray-500">{availableCount > 0 ? 'Inicia sesión para reservar' : 'Sin copias disponibles'}</span>
+          )}
           <ClientOnlyEditLink id={book.id} />
         </div>
       </div>

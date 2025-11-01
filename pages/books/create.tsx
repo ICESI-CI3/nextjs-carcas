@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect, useRef } from 'react'
 import axios from '../../lib/api'
-import { useAuthContext } from '../../context/AuthContext'
+import AuthGuard from '../../components/AuthGuard'
 
 function normalizeCategories(input: string){
   return input.split(',').map(s => s.trim()).filter(Boolean)
@@ -9,15 +9,6 @@ function normalizeCategories(input: string){
 
 export default function CreateBookPage(){
   const router = useRouter()
-  const { hasRole } = useAuthContext()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
-  useEffect(() => {
-    if(mounted && !hasRole(['ADMIN','LIBRARIAN'])){
-      router.replace('/books')
-    }
-  }, [mounted, hasRole, router])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -121,9 +112,10 @@ export default function CreateBookPage(){
   function updateField(k: string, v: any){ setForm((f:any) => ({ ...f, [k]: v })) }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Crear libro</h1>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <AuthGuard roles={['ADMIN', 'LIBRARIAN']}>
+      <div className="container mx-auto p-6">
+        <h1 className="mb-4 text-2xl font-bold">Crear libro</h1>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <label className="block">
             <div className="text-sm font-medium">ISBN <span className="text-red-500">*</span></div>
@@ -191,7 +183,8 @@ export default function CreateBookPage(){
             {error && <div className="text-sm text-red-600">{error}</div>}
           </div>
         </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </AuthGuard>
   )
 }
