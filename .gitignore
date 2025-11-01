@@ -1,0 +1,55 @@
+## Node
+node_modules/
+.pnp
+.pnp.js
+
+## Next.js build
+.next/
+out/
+build/
+dist/
+
+## Production
+/.next/
+
+## Env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+## Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+## Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Testing
+coverage/
+test-results/
+playwright-report/
+
+## TypeScript
+*.tsbuildinfo
+
+## Misc caches
+.cache/
+.parcel-cache/
+.turbo/
+
+# Optional local files
+*.local
+node_modules
