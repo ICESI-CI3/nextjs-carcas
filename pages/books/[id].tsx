@@ -249,17 +249,15 @@ export default function BookDetail(){
             {availableCount === 0 && (
               <p className="text-xs text-gray-500">Todas las copias están reservadas o en préstamo.</p>
             )}
-
-            {isStaff && (
-              <button
-                type="button"
-                onClick={() => loanMutation.mutate(selectedCopyId)}
-                disabled={!selectedCopyId || loanMutation.isPending}
-                className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                {loanMutation.isPending ? 'Registrando…' : 'Registrar préstamo'}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => loanMutation.mutate(selectedCopyId)}
+              disabled={!selectedCopyId || loanMutation.isPending}
+              className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {loanMutation.isPending ? 'Registrando…' : 'Registrar préstamo'}
+            </button>
+            
 
             <ClientOnlyEditButton id={id as string} />
 

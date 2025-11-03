@@ -6,7 +6,6 @@ const Layout: React.FC<{children: React.ReactNode}> = ({ children }) => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">{children}</main>
-      <footer className="bg-white border-t p-4 text-center">Equipo - Taller Next.js</footer>
     </div>
   )
 }
