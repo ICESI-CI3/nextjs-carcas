@@ -51,16 +51,6 @@ export default function BookCard({ book }: { book: any }){
 
         <div className="mt-4 flex items-center gap-3">
           <Link href={`/books/${book.id}`} className="px-3 py-2 bg-blue-600 text-white rounded">Ver detalle</Link>
-          {canReserve ? (
-            <Link
-              href={{ pathname: `/books/${book.id}`, query: { action: 'reserve' } }}
-              className="px-3 py-2 bg-green-600 text-white rounded"
-            >
-              Reservar
-            </Link>
-          ) : (
-            <span className="px-3 py-2 text-sm text-gray-500">{availableCount > 0 ? 'Inicia sesión para reservar' : 'Sin copias disponibles'}</span>
-          )}
           <ClientOnlyEditLink id={book.id} />
         </div>
       </div>
