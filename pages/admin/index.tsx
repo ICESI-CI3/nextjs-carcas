@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useUsers } from '../../hooks/useUsers'
 import Pagination from '../../components/Pagination'
 import useAuth from '../../hooks/useAuth'
+import { useRouter } from 'next/router'
 
 function formatDate(value?: string){
   if (!value) return '—'
@@ -18,6 +19,7 @@ function formatDate(value?: string){
 }
 
 export default function AdminDashboard(){
+  const router = useRouter()
   const queryClient = useQueryClient()
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [viewMode, setViewMode] = useState<'menu' | 'loans' | 'users'>('menu')
@@ -161,6 +163,10 @@ export default function AdminDashboard(){
 
         {viewMode === 'menu' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button onClick={() => router.push('/admin/books')} className="p-8 rounded border bg-white hover:shadow-lg text-left">
+              <div className="text-xl font-semibold mb-2">Gestión de Libros y Copias</div>
+              <div className="text-sm text-gray-600">Ver todos los libros en tabla, gestionar copias: agregar, eliminar y ver estado.</div>
+            </button>
             {isAdmin ? (
               <button onClick={() => setViewMode('users')} className="p-8 rounded border bg-white hover:shadow-lg text-left">
                 <div className="text-xl font-semibold mb-2">Gestión de usuarios</div>

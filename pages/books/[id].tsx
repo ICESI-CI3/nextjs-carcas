@@ -47,7 +47,11 @@ export default function BookDetail(){
   const actionParam = typeof router.query?.action === 'string' ? router.query.action : null
   const isStaff = hasRole(['ADMIN', 'LIBRARIAN'])
 
-  const copies = useMemo(() => (Array.isArray((data as any)?.copies) ? (data as any).copies : []), [data])
+  const copies = useMemo(() => {
+    const allCopies = Array.isArray((data as any)?.copies) ? (data as any).copies : []
+    // Filter out deleted copies
+    return allCopies.filter((copy: any) => copy.status !== 'deleted')
+  }, [data])
   const availableCopies = useMemo(() => copies.filter((copy: any) => copy.status === 'available'), [copies])
   const selectedCopy = useMemo(() => copies.find((copy: any) => copy.id === selectedCopyId) ?? null, [copies, selectedCopyId])
 

@@ -15,7 +15,9 @@ function ClientOnlyEditLink({ id }: { id: string }){
 }
 
 export default function BookCard({ book }: { book: any }){
-  const copies = book.copies || []
+  const allCopies = book.copies || []
+  // Filter out deleted copies
+  const copies = allCopies.filter((c: any) => c.status !== 'deleted')
   const availableCount = copies.filter((c: any) => c.status === 'available').length
   const { isAuthenticated } = useAuthContext()
 
