@@ -90,6 +90,17 @@ NEXT_PUBLIC_API_URL=https://tu-backend/api
 - **Unitarias** con Jest + Testing Library (`npm run test`). Cobertura en componentes reusables y hooks.
 - **E2E** con Playwright (`npm run test:e2e`). Requieren la API levantada y preferiblemente `POST /seed` ejecutado.
 
+## CI/CD
+
+Este proyecto incluye pipelines de CI/CD configurados con GitHub Actions que se ejecutan automáticamente:
+
+- ✅ **Linting** en cada push y pull request
+- ✅ **Pruebas unitarias** con reporte de cobertura
+- ✅ **Build de producción** para verificar que compile correctamente
+- ✅ **Pruebas E2E** (opcional en pull requests)
+
+Los workflows se encuentran en `.github/workflows/`. Para más información, consulta [docs/CI_CD.md](docs/CI_CD.md).
+
 ## Despliegue
 
 1. Configura variables en el servicio destino (`NEXT_PUBLIC_API_URL`).
