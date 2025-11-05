@@ -17,7 +17,6 @@ export default function CreateBookPage(){
     isbn: '', title: '', author: '', publisher: '', publishedDate: '', description: '', pageCount: '', categories: '', language: '', thumbnail: ''
   })
 
-  // Google Books search/autocomplete state (triggered from the Title field)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [searching, setSearching] = useState(false)
   const searchRef = useRef<number | null>(null)
@@ -27,7 +26,6 @@ export default function CreateBookPage(){
     setError(null)
     setLoading(true)
     try{
-      // backend exposes Google Books enrich under /google-books/enrich/:isbn
       const { data } = await axios.post(`/google-books/enrich/${encodeURIComponent(form.isbn)}`)
       // map returned data into form fields (best-effort)
       setForm((f: any) => ({
@@ -48,7 +46,6 @@ export default function CreateBookPage(){
     }finally{ setLoading(false) }
   }
 
-  // Search Google Books by title when user types in the Title field (debounced)
   useEffect(() => {
     if (searchRef.current) window.clearTimeout(searchRef.current)
     const q = form.title || ''
@@ -56,7 +53,7 @@ export default function CreateBookPage(){
       setSuggestions([])
       return
     }
-    setSearching(true)
+  setSearching(true)
     // debounce
     searchRef.current = window.setTimeout(async () => {
       try{
@@ -80,7 +77,6 @@ export default function CreateBookPage(){
       const isbn10 = info.industryIdentifiers.find((id: any) => id.type === 'ISBN_10')
       foundIsbn = (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || ''
     }
-    // Only autofill ISBN per user request
     setForm((f:any) => ({ ...f, isbn: foundIsbn || f.isbn }))
     setSuggestions([])
   }

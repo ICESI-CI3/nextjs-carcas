@@ -30,6 +30,10 @@ export default function BookDetail(){
   const router = useRouter()
   const { id } = router.query as { id?: string }
 
+  function goBack(){
+    router.push('/books')
+  }
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['book', id],
     queryFn: () => fetchBook(id as string),
@@ -40,30 +44,24 @@ export default function BookDetail(){
   const { isAuthenticated, hasRole } = useAuth()
   const [selectedCopyId, setSelectedCopyId] = useState('')
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const [showConfirmDeleteCopy, setShowConfirmDeleteCopy] = useState(false)
-  const [deletingCopy, setDeletingCopy] = useState(false)
-  const [showChangeCopyStatus, setShowChangeCopyStatus] = useState(false)
-  const [changingCopyStatus, setChangingCopyStatus] = useState(false)
-  const [newCopyStatus, setNewCopyStatus] = useState<'available' | 'reserved' | 'borrowed'>('available')
   const actionParam = typeof router.query?.action === 'string' ? router.query.action : null
   const isStaff = hasRole(['ADMIN', 'LIBRARIAN'])
 
   const copies = useMemo(() => (Array.isArray((data as any)?.copies) ? (data as any).copies : []), [data])
-  const visibleCopies = useMemo(() => copies.filter((c: any) => c.status !== 'deleted'), [copies])
-  const availableCopies = useMemo(() => visibleCopies.filter((copy: any) => copy.status === 'available'), [visibleCopies])
-  const selectedCopy = useMemo(() => visibleCopies.find((copy: any) => copy.id === selectedCopyId) ?? null, [visibleCopies, selectedCopyId])
+  const availableCopies = useMemo(() => copies.filter((copy: any) => copy.status === 'available'), [copies])
+  const selectedCopy = useMemo(() => copies.find((copy: any) => copy.id === selectedCopyId) ?? null, [copies, selectedCopyId])
 
   useEffect(() => {
-    if (!visibleCopies.length) {
+    if (!copies.length) {
       setSelectedCopyId('')
       return
     }
-    const alreadySelected = visibleCopies.some((copy: any) => copy.id === selectedCopyId)
+    const alreadySelected = copies.some((copy: any) => copy.id === selectedCopyId)
     if (!alreadySelected) {
-      const fallback = availableCopies[0]?.id ?? visibleCopies[0]?.id ?? ''
+      const fallback = availableCopies[0]?.id ?? copies[0]?.id ?? ''
       if (fallback) setSelectedCopyId(fallback)
     }
-  }, [visibleCopies, availableCopies, selectedCopyId])
+  }, [copies, availableCopies, selectedCopyId])
 
   useEffect(() => {
     if (actionParam === 'reserve' && availableCopies[0]) {
@@ -111,6 +109,8 @@ export default function BookDetail(){
   if(!data) return <div className="p-6">Libro no encontrado</div>
 
   const book = data
+
+  // map short language codes to human-friendly names
   const languageNames: Record<string,string> = {
     en: 'English',
     es: 'Spanish',
@@ -130,9 +130,8 @@ export default function BookDetail(){
   const availableCount = availableCopies.length
   const canReserve = isAuthenticated && (isStaff ? selectedCopy?.status === 'available' : availableCount > 0)
 
-  const canLoan = isAuthenticated && (isStaff ? selectedCopy?.status === 'available' : availableCount > 0)
-
   function handleReserve() {
+    // Not authenticated -> show feedback
     if (!isAuthenticated) {
       setFeedback({ type: 'error', message: 'Necesitas iniciar sesión para reservar.' })
       return
@@ -147,6 +146,7 @@ export default function BookDetail(){
       return
     }
 
+    // Non-staff: pick first available copy automatically
     if (availableCount === 0) {
       setFeedback({ type: 'error', message: 'No hay copias disponibles para reservar.' })
       return
@@ -156,32 +156,11 @@ export default function BookDetail(){
     reserveMutation.mutate(copyId)
   }
 
-  function handleLoan() {
-    if (!isAuthenticated) {
-      setFeedback({ type: 'error', message: 'Necesitas iniciar sesión para registrar un préstamo.' })
-      return
-    }
-
-    if (isStaff) {
-      if (!selectedCopyId || selectedCopy?.status !== 'available') {
-        setFeedback({ type: 'error', message: 'Selecciona una copia disponible para continuar' })
-        return
-      }
-      loanMutation.mutate(selectedCopyId)
-      return
-    }
-
-    if (availableCount === 0) {
-      setFeedback({ type: 'error', message: 'No hay copias disponibles para préstamo.' })
-      return
-    }
-
-    const copyId = availableCopies[0].id
-    loanMutation.mutate(copyId)
-  }
-
   return (
     <div className="container mx-auto p-6">
+      <div className="mb-4">
+        <button onClick={goBack} className="text-sm text-blue-600 hover:underline">← Volver a la lista de libros</button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="md:col-span-3">
           {book.thumbnail ? (
@@ -192,13 +171,6 @@ export default function BookDetail(){
         </div>
 
         <div className="md:col-span-6">
-          <button
-            type="button"
-            onClick={() => router.push('/books')}
-            className="text-sm text-blue-600 hover:underline mb-2"
-          >
-            ← Volver a todos los libros
-          </button>
           <h1 className="text-3xl font-bold">{book.title}</h1>
           <div className="text-sm text-gray-600 mt-1">{book.author}</div>
 
@@ -237,10 +209,10 @@ export default function BookDetail(){
                     onChange={event => setSelectedCopyId(event.target.value)}
                     className="mt-1 w-full rounded border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   >
-                    {visibleCopies.length === 0 ? (
+                    {copies.length === 0 ? (
                       <option value="" disabled>No hay copias registradas</option>
                     ) : (
-                      visibleCopies.map((copy: any) => (
+                      copies.map((copy: any) => (
                         <option key={copy.id} value={copy.id}>
                           {(copy.code || `Copia ${copy.id.slice(0, 6)}`)} — {copy.status}
                         </option>
@@ -269,8 +241,10 @@ export default function BookDetail(){
             <button
               type="button"
               onClick={handleReserve}
+              // For staff keep disable behavior, for non-staff allow click so we can show an in-app alert when no copies
               disabled={isStaff ? (!canReserve || reserveMutation.isPending) : reserveMutation.isPending}
               className={`w-full rounded px-4 py-2 text-sm font-medium text-white transition ${
+                // non-staff: if no available copies, render gray look (but not browser-disabled so click works)
                 !isStaff && availableCount === 0 ? 'bg-gray-300 text-gray-700 cursor-pointer' : reserveMutation.isPending ? 'bg-gray-300' : 'bg-green-600 hover:bg-green-700'
               } ${isStaff ? 'disabled:cursor-not-allowed disabled:bg-gray-300' : ''}`}
             >
@@ -280,11 +254,9 @@ export default function BookDetail(){
            
             <button
               type="button"
-              onClick={handleLoan}
-              disabled={isStaff ? (!canLoan || loanMutation.isPending) : loanMutation.isPending}
-              className={`w-full rounded px-4 py-2 text-sm font-medium text-white transition ${
-                !isStaff && availableCount === 0 ? 'bg-gray-300 text-gray-700 cursor-pointer' : loanMutation.isPending ? 'bg-gray-300' : 'bg-blue-600 hover:bg-blue-700'
-              } ${isStaff ? 'disabled:cursor-not-allowed disabled:bg-gray-300' : ''}`}
+              onClick={() => loanMutation.mutate(selectedCopyId)}
+              disabled={!selectedCopyId || loanMutation.isPending}
+              className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               {loanMutation.isPending ? 'Registrando…' : 'Registrar préstamo'}
             </button>
@@ -293,117 +265,6 @@ export default function BookDetail(){
             )}
 
             <ClientOnlyEditButton id={id as string} />
-            <p className="text-xs text-gray-500 text-center">
-              Acciones de Copias.
-            </p>
-            {isStaff && (
-              <div className="mt-2 space-y-2">
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowChangeCopyStatus(true)}
-                    className="flex-1 w-full rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white"
-                    disabled={!selectedCopyId || changingCopyStatus}
-                  >Cambiar estado</button>
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmDeleteCopy(true)}
-                    className="flex-1 w-full rounded bg-red-600 px-4 py-2 text-sm font-medium text-white"
-                    disabled={!selectedCopyId || deletingCopy}
-                  >Eliminar copia</button>
-                </div>
-
-                {showChangeCopyStatus && (
-                  <div className="rounded border border-yellow-200 bg-yellow-50 p-3">
-                    <div className="text-sm font-medium text-yellow-800">Cambiar estado de la copia seleccionada</div>
-                    <div className="mt-2">
-                      <label className="block text-sm">
-                        Nuevo estado
-                        <select value={newCopyStatus} onChange={e => setNewCopyStatus(e.target.value as any)} className="mt-1 w-full rounded border px-3 py-2 text-sm">
-                          <option value="available">available</option>
-                          <option value="reserved">reserved</option>
-                          <option value="borrowed">borrowed</option>
-                          <option value="maintenance">maintenance</option>
-                          <option value="lost">lost</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!selectedCopyId) {
-                            setFeedback({ type: 'error', message: 'Selecciona una copia para cambiar su estado.' })
-                            return
-                          }
-                          setChangingCopyStatus(true)
-                          setFeedback(null)
-                          try {
-                            await axios.patch(`/copies/${selectedCopyId}/status`, { status: newCopyStatus })
-                            setFeedback({ type: 'success', message: `Estado actualizado a ${newCopyStatus}.` })
-                            queryClient.invalidateQueries({ queryKey: ['book', id] })
-                            queryClient.invalidateQueries({ queryKey: ['copies'] })
-                            setShowChangeCopyStatus(false)
-                          } catch (err: any) {
-                            setFeedback({ type: 'error', message: err?.response?.data?.message || String(err) })
-                          } finally {
-                            setChangingCopyStatus(false)
-                          }
-                        }}
-                        disabled={changingCopyStatus}
-                        className="rounded bg-yellow-600 px-3 py-1 text-white"
-                      >Confirmar</button>
-                      <button
-                        type="button"
-                        onClick={() => setShowChangeCopyStatus(false)}
-                        disabled={changingCopyStatus}
-                        className="rounded bg-gray-200 px-3 py-1"
-                      >Cancelar</button>
-                    </div>
-                  </div>
-                )}
-
-                {!showConfirmDeleteCopy ? null : (
-                  <div className="rounded border border-red-200 bg-red-50 p-3 mt-2">
-                    <div className="text-sm font-medium text-red-700">Confirmar marcado como eliminado</div>
-                    <div className="mb-2 text-xs text-gray-600">Esto realizara un soft delete de la copia y la ocultará de los listados.</div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!selectedCopyId) {
-                            setFeedback({ type: 'error', message: 'Selecciona una copia para eliminar.' })
-                            return
-                          }
-                          setDeletingCopy(true)
-                          setFeedback(null)
-                          try {
-                            await axios.patch(`/copies/${selectedCopyId}/status`, { status: 'deleted' })
-                            setFeedback({ type: 'success', message: 'Copia marcada como eliminada.' })
-                            queryClient.invalidateQueries({ queryKey: ['book', id] })
-                            queryClient.invalidateQueries({ queryKey: ['copies'] })
-                            setShowConfirmDeleteCopy(false)
-                            setSelectedCopyId('')
-                          } catch (err: any) {
-                            setFeedback({ type: 'error', message: err?.response?.data?.message || String(err) })
-                          } finally {
-                            setDeletingCopy(false)
-                          }
-                        }}
-                        disabled={deletingCopy}
-                        className="rounded bg-red-600 px-3 py-1 text-white"
-                      >Confirmar</button>
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmDeleteCopy(false)}
-                        disabled={deletingCopy}
-                        className="rounded bg-gray-200 px-3 py-1"
-                      >Cancelar</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {feedback && (
               <div className={`rounded border p-3 text-xs ${feedback.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
@@ -414,18 +275,20 @@ export default function BookDetail(){
 
           <div className="mt-6 text-sm text-gray-700">
             <div><span className="font-semibold">ISBN:</span> {book.isbn}</div>
-            <div className="mt-2"><span className="font-semibold">Copias:</span> {visibleCopies.length} — <span className="font-semibold">Disponibles:</span> {availableCount}</div>
+            <div className="mt-2"><span className="font-semibold">Copias:</span> {copies.length} — <span className="font-semibold">Disponibles:</span> {availableCount}</div>
           </div>
           
-            {isStaff && isAuthenticated && (
+          {isStaff && isAuthenticated && (
           <>
+            <p className="text-xs text-gray-500">
+              Los préstamos sólo pueden ser gestionados por personal autorizado.
+            </p>
 
-
-            {visibleCopies.length > 0 && (
+            {copies.length > 0 && (
                   <div className="mt-4">
                     <div className="text-sm font-semibold mb-2">Listado de copias</div>
                     <ul className="text-sm space-y-2">
-                      {visibleCopies.map((c: any) => (
+                      {copies.map((c: any) => (
                         <li key={c.id} className="flex items-center justify-between">
                           <div>{c.code}</div>
                           <div

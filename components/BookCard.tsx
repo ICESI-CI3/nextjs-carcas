@@ -15,10 +15,8 @@ function ClientOnlyEditLink({ id }: { id: string }){
 }
 
 export default function BookCard({ book }: { book: any }){
-  // compute copies info
   const copies = book.copies || []
-  const visibleCopies = copies.filter((c: any) => c.status !== 'deleted')
-  const availableCount = visibleCopies.filter((c: any) => c.status === 'available').length
+  const availableCount = copies.filter((c: any) => c.status === 'available').length
   const { isAuthenticated } = useAuthContext()
 
   const canReserve = isAuthenticated && availableCount > 0
@@ -60,7 +58,7 @@ export default function BookCard({ book }: { book: any }){
       <aside className="md:w-1/6 w-full border-l p-4 flex flex-col items-start gap-3">
         {book.pageCount && <div className="text-sm text-gray-600">{book.pageCount} páginas</div>}
         {book.language && <div className="text-sm text-gray-600">Idioma: {book.language}</div>}
-  <div className="text-sm text-gray-600">Copias: {visibleCopies.length} • Disponibles: {availableCount}</div>
+        <div className="text-sm text-gray-600">Copias: {copies.length} • Disponibles: {availableCount}</div>
         <div className="mt-auto w-full">
           <div className="text-xs text-gray-500">ISBN</div>
           <div className="text-sm font-mono break-all">{book.isbn}</div>

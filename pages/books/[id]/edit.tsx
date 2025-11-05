@@ -13,7 +13,6 @@ export default function EditBookPage(){
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [form, setForm] = useState<any>({ isbn: '', title: '', author: '', publisher: '', publishedDate: '', description: '', pageCount: '', categories: '', language: '', thumbnail: '' })
 
@@ -45,24 +44,19 @@ export default function EditBookPage(){
     setError(null)
     setLoading(true)
     try{
-      const res = await axios.post(`/google-books/enrich/${encodeURIComponent(form.isbn)}`)
-      // endpoint may return the metadata directly or wrap it (e.g. { book: {...} })
-      let data = res.data
-      if (data && data.book) data = data.book
-      // if response doesn't contain expected fields, treat as no-op
+      const { data } = await axios.post(`/google-books/enrich/${encodeURIComponent(form.isbn)}`)
       setForm((f:any) => ({
         ...f,
-        title: data?.title ?? f.title,
-        author: data?.author ?? f.author,
-        publisher: data?.publisher ?? f.publisher,
-        publishedDate: data?.publishedDate ? new Date(data.publishedDate).toISOString().slice(0,10) : f.publishedDate,
-        description: data?.description ?? f.description,
-        pageCount: data?.pageCount ?? f.pageCount,
-        categories: Array.isArray(data?.categories) ? data.categories.join(', ') : f.categories,
-        language: data?.language ?? f.language,
-        thumbnail: data?.thumbnail ?? f.thumbnail,
+        title: data.title ?? f.title,
+        author: data.author ?? f.author,
+        publisher: data.publisher ?? f.publisher,
+        publishedDate: data.publishedDate ? new Date(data.publishedDate).toISOString().slice(0,10) : f.publishedDate,
+        description: data.description ?? f.description,
+        pageCount: data.pageCount ?? f.pageCount,
+        categories: Array.isArray(data.categories) ? data.categories.join(', ') : f.categories,
+        language: data.language ?? f.language,
+        thumbnail: data.thumbnail ?? f.thumbnail,
       }))
-      setFeedback({ type: 'success', message: 'Datos cargados desde Google Books.' })
     }catch(err:any){
       setError(err?.response?.data?.message || String(err))
     }finally{ setLoading(false) }
@@ -152,127 +146,7 @@ export default function EditBookPage(){
 
           <div className="flex items-center gap-3">
             <button type="submit" disabled={loading} className="rounded bg-blue-600 px-4 py-2 text-white">Guardar</button>
-            <button
-              type="button"
-              onClick={async () => {
-                if(!id) return
-                setFeedback(null)
-                setLoading(true)
-                try{
-                  const res = await axios.get('/copies')
-                  const copies: any[] = Array.isArray(res.data) ? res.data : []
-
-                  const bookCopies = copies.filter(c => String(c.bookId) === String(id))
-
-                  // prefer ISBN-based codes: COPY-<ISBN>-<n>
-                  const isbnRaw = String(form.isbn || '')
-                  const isbn = isbnRaw.replace(/\s+/g, '')
-
-                  let nextCode = ''
-
-                  if (isbn) {
-                    // find existing copies for this book that follow COPY-<ISBN>-<num>
-                    const prefix = `COPY-${isbn}-`
-                    let maxNum = 0
-                    for (const c of bookCopies) {
-                      const code = String(c.code || '')
-                      if (!code.startsWith(prefix)) continue
-                      const suffix = code.substring(prefix.length)
-                      const num = parseInt(suffix, 10)
-                      if (!isNaN(num) && num > maxNum) maxNum = num
-                    }
-                    let nextNum = maxNum + 1
-                    // try to create, and if the server reports the code already exists (409 / conflict), retry with next number
-                    const prefixBase = prefix
-                    const maxAttempts = 20
-                    let created = false
-                    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                      const candidate = `${prefixBase}${nextNum}`
-                      try {
-                        await axios.post('/copies', { code: candidate, bookId: id, status: 'available' })
-                        nextCode = candidate
-                        created = true
-                        break
-                      } catch (postErr: any) {
-                        const msg = (postErr?.response?.data?.message || '').toLowerCase()
-                        const status = postErr?.response?.status
-                        if (status === 409 || msg.includes('already exists') || msg.includes('exists')) {
-                          // conflict: try next
-                          nextNum += 1
-                          continue
-                        }
-                        throw postErr
-                      }
-                    }
-                    if (!created) throw new Error('No fue posible crear la copia después de varios intentos por conflicto de código')
-                  } else {
-                    // fallback to previous prefix-based fallback when ISBN is not available
-                    function splitPrefixAndSuffix(code: string){
-                      const idx = code.lastIndexOf('-')
-                      if(idx === -1) return { prefix: code, suffix: '' }
-                      return { prefix: code.substring(0, idx), suffix: code.substring(idx + 1) }
-                    }
-
-                    let bookPrefix = 'COPY-001'
-                    if(bookCopies.length > 0){
-                      const firstCode = String(bookCopies[0].code || '')
-                      bookPrefix = splitPrefixAndSuffix(firstCode).prefix || bookPrefix
-                    } else {
-                      const counts: Record<string, number> = {}
-                      for(const c of copies){
-                        const code = String(c.code || '')
-                        const { prefix } = splitPrefixAndSuffix(code)
-                        if(prefix) counts[prefix] = (counts[prefix] || 0) + 1
-                      }
-                      const keys = Object.keys(counts)
-                      if(keys.length){
-                        keys.sort((a,b) => counts[b] - counts[a])
-                        bookPrefix = keys[0]
-                      }
-                    }
-
-                    let maxNum = 0
-                    for(const c of copies){
-                      const code = String(c.code || '')
-                      if(!code.startsWith(bookPrefix + '-')) continue
-                      const { suffix } = splitPrefixAndSuffix(code)
-                      const num = parseInt(suffix, 10)
-                      if(!isNaN(num) && num > maxNum) maxNum = num
-                    }
-                    const startNum = maxNum + 1
-                    let nextNum = startNum
-                    const basePrefix = `${bookPrefix}-`
-                    const maxAttempts = 20
-                    let created = false
-                    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                      const candidate = `${basePrefix}${nextNum}`
-                      try {
-                        await axios.post('/copies', { code: candidate, bookId: id, status: 'available' })
-                        nextCode = candidate
-                        created = true
-                        break
-                      } catch (postErr: any) {
-                        const msg = (postErr?.response?.data?.message || '').toLowerCase()
-                        const status = postErr?.response?.status
-                        if (status === 409 || msg.includes('already exists') || msg.includes('exists')) {
-                          nextNum += 1
-                          continue
-                        }
-                        throw postErr
-                      }
-                    }
-                    if (!created) throw new Error('No fue posible crear la copia después de varios intentos por conflicto de código')
-                  }
-                  // success path: nextCode already set by the creation loop above
-                  setFeedback({ type: 'success', message: `Copia creada correctamente: ${nextCode}` })
-                }catch(err:any){
-                  setFeedback({ type: 'error', message: err?.response?.data?.message || String(err) })
-                }finally{ setLoading(false) }
-              }}
-              disabled={loading}
-              className="rounded bg-green-600 px-4 py-2 text-white"
-            >Crear copia</button>
-            <button type="button" onClick={() => router.push(`/books/${id}`)} className="rounded bg-gray-200 px-4 py-2">Atras</button>
+            <button type="button" onClick={() => router.push(`/books/${id}`)} className="rounded bg-gray-200 px-4 py-2">Cancelar</button>
             <div className="ml-2">
               {!showConfirmDelete ? (
                 <button
@@ -306,17 +180,12 @@ export default function EditBookPage(){
                       onClick={() => setShowConfirmDelete(false)}
                       disabled={loading}
                       className="rounded bg-gray-200 px-3 py-1"
-                    >Atras</button>
+                    >Cancelar</button>
                   </div>
                 </div>
               )}
             </div>
             {error && <div className="text-sm text-red-600">{error}</div>}
-            {feedback && (
-              <div className={`rounded border p-3 text-sm ${feedback.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                {feedback.message}
-              </div>
-            )}
           </div>
         </div>
       </form>

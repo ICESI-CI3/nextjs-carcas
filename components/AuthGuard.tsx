@@ -28,7 +28,6 @@ const AuthGuard: React.FC<Props> = ({
   useEffect(() => {
     if (initializing) return
     if (requireAuth && !isAuthenticated) {
-      // Preserve current route so we can return after login
       const searchParams = new URLSearchParams()
       searchParams.set('redirect', router.asPath)
       router.replace(`${mustRedirectTo}?${searchParams.toString()}`)
