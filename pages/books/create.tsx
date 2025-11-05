@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect, useRef } from 'react'
 import axios from '../../lib/api'
-import { useAuthContext } from '../../context/AuthContext'
+import AuthGuard from '../../components/AuthGuard'
 
 function normalizeCategories(input: string){
   return input.split(',').map(s => s.trim()).filter(Boolean)
@@ -9,15 +9,6 @@ function normalizeCategories(input: string){
 
 export default function CreateBookPage(){
   const router = useRouter()
-  const { hasRole } = useAuthContext()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
-  useEffect(() => {
-    if(mounted && !hasRole(['ADMIN','LIBRARIAN'])){
-      router.replace('/books')
-    }
-  }, [mounted, hasRole, router])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,7 +17,6 @@ export default function CreateBookPage(){
     isbn: '', title: '', author: '', publisher: '', publishedDate: '', description: '', pageCount: '', categories: '', language: '', thumbnail: ''
   })
 
-  // Google Books search/autocomplete state (triggered from the Title field)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [searching, setSearching] = useState(false)
   const searchRef = useRef<number | null>(null)
@@ -36,7 +26,6 @@ export default function CreateBookPage(){
     setError(null)
     setLoading(true)
     try{
-      // backend exposes Google Books enrich under /google-books/enrich/:isbn
       const { data } = await axios.post(`/google-books/enrich/${encodeURIComponent(form.isbn)}`)
       // map returned data into form fields (best-effort)
       setForm((f: any) => ({
@@ -57,7 +46,6 @@ export default function CreateBookPage(){
     }finally{ setLoading(false) }
   }
 
-  // Search Google Books by title when user types in the Title field (debounced)
   useEffect(() => {
     if (searchRef.current) window.clearTimeout(searchRef.current)
     const q = form.title || ''
@@ -65,7 +53,7 @@ export default function CreateBookPage(){
       setSuggestions([])
       return
     }
-    setSearching(true)
+  setSearching(true)
     // debounce
     searchRef.current = window.setTimeout(async () => {
       try{
@@ -89,7 +77,6 @@ export default function CreateBookPage(){
       const isbn10 = info.industryIdentifiers.find((id: any) => id.type === 'ISBN_10')
       foundIsbn = (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || ''
     }
-    // Only autofill ISBN per user request
     setForm((f:any) => ({ ...f, isbn: foundIsbn || f.isbn }))
     setSuggestions([])
   }
@@ -121,9 +108,10 @@ export default function CreateBookPage(){
   function updateField(k: string, v: any){ setForm((f:any) => ({ ...f, [k]: v })) }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Crear libro</h1>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <AuthGuard roles={['ADMIN', 'LIBRARIAN']}>
+      <div className="container mx-auto p-6">
+        <h1 className="mb-4 text-2xl font-bold">Crear libro</h1>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <label className="block">
             <div className="text-sm font-medium">ISBN <span className="text-red-500">*</span></div>
@@ -191,7 +179,8 @@ export default function CreateBookPage(){
             {error && <div className="text-sm text-red-600">{error}</div>}
           </div>
         </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </AuthGuard>
   )
 }

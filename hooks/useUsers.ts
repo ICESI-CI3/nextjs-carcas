@@ -1,24 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from '../lib/api'
 
-export type Book = {
-  id: string
-  title: string
-  author?: string
-  thumbnail?: string
-  categories?: string[]
-  copies?: any[]
-  isbn?: string
-}
-
-type BooksQuery = {
+type UsersQuery = {
   search?: string
   page?: number
   pageSize?: number
 }
 
-type BooksResponse = {
-  items: Book[]
+type UsersResponse = {
+  items: any[]
   meta: {
     total: number
     page: number
@@ -26,28 +16,24 @@ type BooksResponse = {
   }
 }
 
-export function useBooks({ search, page = 1, pageSize = 10 }: BooksQuery){
-  return useQuery<BooksResponse>({
-    queryKey: ['books', { search, page, pageSize }],
-    placeholderData: previousData => previousData,
+export function useUsers({ search, page = 1, pageSize = 10 }: UsersQuery) {
+  return useQuery<UsersResponse>({
+    queryKey: ['users', { search, page, pageSize }],
     queryFn: async () => {
       const params: Record<string, unknown> = {
         search: search?.trim() || undefined,
+        q: search?.trim() || undefined,
         page,
         limit: pageSize,
       }
-      const { data } = await axios.get('/books', { params })
+      const { data } = await axios.get('/users', { params })
 
       if (Array.isArray(data)) {
         const start = (page - 1) * pageSize
         const slice = data.slice(start, start + pageSize)
         return {
           items: slice,
-          meta: {
-            total: data.length,
-            page,
-            pageSize,
-          },
+          meta: { total: data.length, page, pageSize },
         }
       }
 
@@ -67,5 +53,8 @@ export function useBooks({ search, page = 1, pageSize = 10 }: BooksQuery){
         },
       }
     },
+    staleTime: 15_000,
   })
 }
+
+export default useUsers

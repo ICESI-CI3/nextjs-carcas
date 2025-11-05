@@ -15,9 +15,11 @@ function ClientOnlyEditLink({ id }: { id: string }){
 }
 
 export default function BookCard({ book }: { book: any }){
-  // compute copies info
   const copies = book.copies || []
   const availableCount = copies.filter((c: any) => c.status === 'available').length
+  const { isAuthenticated } = useAuthContext()
+
+  const canReserve = isAuthenticated && availableCount > 0
 
   return (
     <article className="bg-white rounded shadow overflow-hidden md:flex">
@@ -30,7 +32,8 @@ export default function BookCard({ book }: { book: any }){
       </div>
 
       <div className="p-4 flex-1">
-        <h3 className="text-lg font-semibold">{book.title}</h3>
+        <Link href={`/books/${book.id}`} className="text-lg font-semibold">{book.title}</Link>
+
         <p className="text-sm text-gray-600">{book.author}</p>
         {book.publisher && <p className="text-xs text-gray-500 mt-1">{book.publisher} • {book.publishedDate}</p>}
 
@@ -48,7 +51,6 @@ export default function BookCard({ book }: { book: any }){
 
         <div className="mt-4 flex items-center gap-3">
           <Link href={`/books/${book.id}`} className="px-3 py-2 bg-blue-600 text-white rounded">Ver detalle</Link>
-          <button className="px-3 py-2 bg-green-600 text-white rounded">Reservar</button>
           <ClientOnlyEditLink id={book.id} />
         </div>
       </div>
