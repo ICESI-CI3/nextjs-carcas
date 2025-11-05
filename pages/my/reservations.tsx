@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AuthGuard from '../../components/AuthGuard'
 import { useMyReservations } from '../../hooks/useReservations'
 import axios from '../../lib/api'
@@ -33,6 +33,13 @@ export default function MyReservationsPage(){
       setFeedback({ type: 'error', message })
     },
   })
+
+  // auto-clear feedback after 5s
+  useEffect(() => {
+    if (!feedback) return
+    const t = setTimeout(() => setFeedback(null), 5000)
+    return () => clearTimeout(t)
+  }, [feedback])
 
   return (
     <AuthGuard>
@@ -81,11 +88,11 @@ export default function MyReservationsPage(){
                 <dl className="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-600 md:grid-cols-2">
                   <div>
                     <dt className="font-medium">Creada</dt>
-                    <dd>{formatDate(reservation.createdAt)}</dd>
+                    <dd>{formatDate((reservation as any).reservationDate ?? reservation.createdAt)}</dd>
                   </div>
                   <div>
                     <dt className="font-medium">Expira</dt>
-                    <dd>{formatDate(reservation.expiresAt)}</dd>
+                    <dd>{formatDate((reservation as any).expirationDate ?? reservation.expiresAt)}</dd>
                   </div>
                 </dl>
 

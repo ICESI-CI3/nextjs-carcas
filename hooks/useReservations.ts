@@ -44,3 +44,15 @@ export function usePendingReservations(enabled: boolean){
     staleTime: 15_000,
   })
 }
+
+export function useAllReservations(enabled: boolean){
+  return useQuery<Reservation[]>({
+    queryKey: ['reservations', 'all'],
+    queryFn: async () => {
+      const { data } = await axios.get('/reservations')
+      return data
+    },
+    enabled,
+    staleTime: 15_000,
+  })
+}

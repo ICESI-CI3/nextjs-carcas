@@ -54,7 +54,7 @@ export default function MyLoansPage(){
                 <dl className="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-600 md:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="font-medium">Entregado</dt>
-                    <dd>{formatDate(loan.borrowedAt)}</dd>
+                    <dd>{formatDate((loan as any).loanDate ?? loan.borrowedAt)}</dd>
                   </div>
                   <div>
                     <dt className="font-medium">Fecha límite</dt>
@@ -62,7 +62,7 @@ export default function MyLoansPage(){
                   </div>
                   <div>
                     <dt className="font-medium">Devuelto</dt>
-                    <dd>{formatDate(loan.returnedAt)}</dd>
+                    <dd>{formatDate((loan as any).returnDate ?? loan.returnedAt)}</dd>
                   </div>
                   <div>
                     <dt className="font-medium">Multa</dt>
