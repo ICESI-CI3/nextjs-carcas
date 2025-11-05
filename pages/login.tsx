@@ -70,13 +70,6 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => setShowTotp(prev => !prev)}
-            className="text-xs font-medium text-blue-600 underline"
-          >
-            {showTotp ? 'Ocultar campo 2FA' : 'Tengo código de verificación 2FA'}
-          </button>
           {showTotp && (
             <label className="block text-sm font-medium text-gray-700">
               Código TOTP
