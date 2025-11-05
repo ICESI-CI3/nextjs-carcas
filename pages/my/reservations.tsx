@@ -3,17 +3,131 @@ import { useState, useEffect } from 'react'
 import AuthGuard from '../../components/AuthGuard'
 import { useMyReservations } from '../../hooks/useReservations'
 import axios from '../../lib/api'
+import Link from 'next/link'
 
-function formatDate(value?: string){
+function formatDate(value?: string) {
   if (!value) return '—'
   try {
-    return new Date(value).toLocaleString()
+    return new Date(value).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
   } catch {
     return value
   }
 }
 
-export default function MyReservationsPage(){
+function formatDateTime(value?: string) {
+  if (!value) return '—'
+  try {
+    return new Date(value).toLocaleString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return value
+  }
+}
+
+function getStatusBadge(status: string) {
+  const styles = {
+    pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    fulfilled: 'bg-green-100 text-green-800 border-green-200',
+    cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
+    expired: 'bg-red-100 text-red-800 border-red-200',
+  }
+  const labels = {
+    pending: 'Pendiente',
+    fulfilled: 'Completada',
+    cancelled: 'Cancelada',
+    expired: 'Expirada',
+  }
+
+  const style = styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800 border-gray-200'
+  const label = labels[status as keyof typeof labels] || status
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${style}`}
+    >
+      {label}
+    </span>
+  )
+}
+
+function FeedbackBanner({
+  feedback,
+  onClose,
+}: {
+  feedback: { type: 'success' | 'error'; message: string } | null
+  onClose: () => void
+}) {
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(onClose, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [feedback, onClose])
+
+  if (!feedback) return null
+
+  return (
+    <div
+      className={`relative rounded-lg border p-4 shadow-sm transition-all duration-300 ${
+        feedback.type === 'success'
+          ? 'border-green-200 bg-green-50 text-green-800'
+          : 'border-red-200 bg-red-50 text-red-800'
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-2">
+          <span className="text-lg">{feedback.type === 'success' ? '✓' : '✕'}</span>
+          <p className="text-sm font-medium">{feedback.message}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Cerrar"
+        >
+          <span className="text-lg">×</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function LoadingState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+      <p className="text-sm text-gray-600">Cargando reservas...</p>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <div className="text-5xl mb-4">📋</div>
+      <p className="text-lg font-semibold text-gray-900 mb-2">No tienes reservas activas</p>
+      <p className="text-sm text-gray-500 text-center max-w-md mb-6">
+        Cuando reserves un libro, aparecerá aquí. Las reservas expiran automáticamente al vencer su fecha límite.
+      </p>
+      <Link
+        href="/books"
+        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+      >
+        Explorar catálogo
+      </Link>
+    </div>
+  )
+}
+
+export default function MyReservationsPage() {
   const queryClient = useQueryClient()
   const { data, isLoading, error } = useMyReservations()
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -24,94 +138,121 @@ export default function MyReservationsPage(){
     },
     onMutate: () => setFeedback(null),
     onSuccess: () => {
-      setFeedback({ type: 'success', message: 'Reserva cancelada correctamente.' })
+      setFeedback({ type: 'success', message: 'Reserva cancelada correctamente' })
       queryClient.invalidateQueries({ queryKey: ['my-reservations'] })
       queryClient.invalidateQueries({ queryKey: ['books'] })
     },
     onError: (mutationError: any) => {
-      const message = mutationError?.response?.data?.message ?? mutationError?.message ?? 'No fue posible cancelar la reserva.'
+      const message =
+        mutationError?.response?.data?.message ?? mutationError?.message ?? 'No fue posible cancelar la reserva'
       setFeedback({ type: 'error', message })
     },
   })
 
-  // auto-clear feedback after 5s
-  useEffect(() => {
-    if (!feedback) return
-    const t = setTimeout(() => setFeedback(null), 5000)
-    return () => clearTimeout(t)
-  }, [feedback])
-
   return (
     <AuthGuard>
-      <div className="container mx-auto space-y-6 p-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mis reservas</h1>
-          <p className="text-sm text-gray-600">Consulta y gestiona tus reservas activas. Las reservas expiran automáticamente al vencer su fecha límite.</p>
-        </div>
-
-        {isLoading && (
-          <div className="rounded border bg-white p-8 text-center text-sm text-gray-600 shadow">Cargando reservas…</div>
-        )}
-
-        {error && (
-          <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            Ocurrió un error al cargar tus reservas.
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Mis Reservas</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Consulta y gestiona tus reservas activas. Las reservas expiran automáticamente al vencer su fecha límite.
+            </p>
           </div>
-        )}
 
-        {feedback && (
-          <div className={`rounded border p-3 text-sm ${feedback.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-            {feedback.message}
-          </div>
-        )}
+          {/* Feedback Banner */}
+          <FeedbackBanner feedback={feedback} onClose={() => setFeedback(null)} />
 
-        {data && data.length === 0 && (
-          <div className="rounded border bg-white p-8 text-center text-sm text-gray-600 shadow">
-            No tienes reservas activas por el momento.
-          </div>
-        )}
-
-        {data && data.length > 0 && (
-          <div className="grid gap-4">
-            {data.map(reservation => (
-              <article key={reservation.id} className="rounded border bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-800">{reservation.copy?.book?.title ?? 'Libro'}</div>
-                    <div className="text-xs text-gray-500">Copia: {reservation.copy?.code ?? reservation.copy?.id ?? '—'}</div>
-                  </div>
-                  <span className={`inline-flex h-6 items-center rounded-full px-3 text-xs font-medium ${reservation.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : reservation.status === 'fulfilled' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                    {reservation.status}
-                  </span>
+          {/* Error State */}
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-red-600 text-lg">⚠️</span>
+                <div>
+                  <p className="text-sm font-medium text-red-800">Error al cargar reservas</p>
+                  <p className="mt-1 text-xs text-red-600">
+                    Ocurrió un error al cargar tus reservas. Intenta nuevamente más tarde.
+                  </p>
                 </div>
+              </div>
+            </div>
+          )}
 
-                <dl className="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-600 md:grid-cols-2">
-                  <div>
-                    <dt className="font-medium">Creada</dt>
-                    <dd>{formatDate((reservation as any).reservationDate ?? reservation.createdAt)}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium">Expira</dt>
-                    <dd>{formatDate((reservation as any).expirationDate ?? reservation.expiresAt)}</dd>
-                  </div>
-                </dl>
+          {/* Content */}
+          {isLoading ? (
+            <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+              <LoadingState />
+            </div>
+          ) : data && data.length === 0 ? (
+            <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+              <EmptyState />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {data?.map((reservation) => (
+                <article
+                  key={reservation.id}
+                  className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {reservation.copy?.book?.title ?? 'Libro'}
+                          </h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            Copia: {reservation.copy?.code ?? reservation.copy?.id?.slice(0, 8) ?? '—'}
+                          </p>
+                        </div>
+                        {getStatusBadge(reservation.status)}
+                      </div>
 
-                {reservation.status === 'pending' && (
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      onClick={() => cancelReservation.mutate(reservation.id)}
-                      disabled={cancelReservation.isPending}
-                      className="rounded bg-red-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-gray-300"
-                    >
-                      {cancelReservation.isPending ? 'Cancelando…' : 'Cancelar reserva'}
-                    </button>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-gray-500 mb-1">Fecha de creación</span>
+                          <span className="text-sm text-gray-900">
+                            {formatDateTime((reservation as any).reservationDate ?? reservation.createdAt)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-gray-500 mb-1">Fecha de expiración</span>
+                          <span className="text-sm text-gray-900">
+                            {formatDateTime((reservation as any).expirationDate ?? reservation.expiresAt)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {reservation.status === 'pending' && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <button
+                            type="button"
+                            onClick={() => cancelReservation.mutate(reservation.id)}
+                            disabled={cancelReservation.isPending}
+                            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {cancelReservation.isPending ? (
+                              <>
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                <span>Cancelando...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>✕</span>
+                                <span>Cancelar reserva</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </AuthGuard>
   )
