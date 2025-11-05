@@ -1,9 +1,9 @@
 import { describe, it, expect, jest } from '@jest/globals'
-import * as matchers from '@testing-library/jest-dom/matchers'
+
+import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
 import Pagination from '../components/Pagination'
 
-expect.extend(matchers)
 
 describe('Pagination', () => {
   it('disables previous button on first page and triggers callbacks', () => {
@@ -14,7 +14,7 @@ describe('Pagination', () => {
     )
 
     const prevButton = screen.getByRole('button', { name: /página anterior/i })
-    expect(prevButton).toBeDisabled()
+    expect(prevButton.disabled).toBe(true)
 
     const pageTwoButton = screen.getByRole('button', { name: '2' })
     fireEvent.click(pageTwoButton)
