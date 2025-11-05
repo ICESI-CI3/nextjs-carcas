@@ -1,10 +1,4 @@
-<!-- Placeholder for documentation -->
-
-<!-- Documentation starts here -->
-
-``` 
- 
-# BiblioIcesi Frontend
+## BiblioIcesi Frontend
 
 Interfaz web construida con Next.js 13 para consumir la API BiblioIcesi. Permite consultar el catálogo, gestionar reservas y administrar préstamos según el rol del usuario.
 
@@ -28,22 +22,6 @@ cd nextjs-carcas
 ```bash
 npm install
 ```
-
-### Paso 3: Configurar variables de entorno
-
-Crea un archivo `.env.local` en la raíz del proyecto:
-
-```env
-NEXT_PUBLIC_API_URL=https://nest-1my6.onrender.com/api
-```
-
-O si tienes tu propia API:
-
-```env
-NEXT_PUBLIC_API_URL=https://tu-backend/api
-```
-
-**Nota**: Si no configuras esta variable, la aplicación usará por defecto `https://nest-1my6.onrender.com/api`.
 
 ## Ejecución de la Aplicación
 
@@ -382,27 +360,6 @@ Antes de probar, asegúrate de que:
 2. Configura la variable de entorno `NEXT_PUBLIC_API_URL` en la configuración del proyecto
 3. Vercel detectará automáticamente Next.js y desplegará la aplicación
 
-### Despliegue en Render
+### Despliegue en Vercel continuamente
 
-1. Crea un nuevo servicio "Web Service" en Render
-2. Conecta tu repositorio
-3. Configura:
-   - **Build Command**: `npm run build`
-   - **Start Command**: `npm run start`
-   - Variable de entorno: `NEXT_PUBLIC_API_URL`
-4. Render desplegará automáticamente
-
-### Despliegue Manual
-
-1. Configura variables en el servicio destino (`NEXT_PUBLIC_API_URL`)
-2. Ejecuta `npm run build`
-3. Sirve el resultado con `npm run start` o usa un servidor web como Nginx
-
-## Documentación adicional
-
-- `docs/TallerNext.md`: requerimientos oficiales del taller.
-- `docs/InformeFuncionalidades.md`: **informe detallado de funcionalidades, autenticación, autorización y gestión del estado**.
-- `docs/DocumentacionPruebas.md`: documentación completa del sistema de pruebas.
-- `docs/README-API.md`: guía pública de la API BiblioIcesi.
-- `docs/REPORT-API.md`: informe técnico backend.
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/ckVqWxjG)
+https://nextjs-carcas.vercel.app/books
