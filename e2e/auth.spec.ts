@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000')
+    await page.goto('/')
   })
 
   test('should navigate to login page', async ({ page }) => {
@@ -12,7 +12,7 @@ test.describe('Authentication', () => {
   })
 
   test('should show login form', async ({ page }) => {
-    await page.goto('http://localhost:3000/login')
+    await page.goto('/login')
     await expect(page.locator('input[type="email"], input[name*="email"]')).toBeVisible()
     await expect(page.locator('input[type="password"], input[name*="password"]')).toBeVisible()
     await expect(page.locator('button[type="submit"], button:has-text("Iniciar")')).toBeVisible()
@@ -24,13 +24,13 @@ test.describe('Authentication', () => {
   })
 
   test('should show register form', async ({ page }) => {
-    await page.goto('http://localhost:3000/register')
+    await page.goto('/register')
     await expect(page.locator('input[type="email"], input[name*="email"]')).toBeVisible()
-    await expect(page.locator('input[type="password"], input[name*="password"]')).toBeVisible()
+    await expect(page.locator('input[type="password"], input[name*="password"]').first()).toBeVisible()
   })
 
   test('should display validation errors on empty login', async ({ page }) => {
-    await page.goto('http://localhost:3000/login')
+    await page.goto('/login')
     const submitButton = page.locator('button[type="submit"], button:has-text("Iniciar")')
     
     // Try to submit without filling
