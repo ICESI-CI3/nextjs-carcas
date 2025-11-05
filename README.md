@@ -94,10 +94,10 @@ NEXT_PUBLIC_API_URL=https://tu-backend/api
 
 Este proyecto incluye pipelines de CI/CD configurados con GitHub Actions que se ejecutan automáticamente:
 
-- ✅ **Linting** en cada push y pull request
-- ✅ **Pruebas unitarias** con reporte de cobertura
-- ✅ **Build de producción** para verificar que compile correctamente
-- ✅ **Pruebas E2E** (opcional en pull requests)
+- **Linting** en cada push y pull request
+- **Pruebas unitarias** con reporte de cobertura
+- **Build de producción** para verificar que compile correctamente
+- **Pruebas E2E** (opcional en pull requests)
 
 Los workflows se encuentran en `.github/workflows/`. Para más información, consulta [docs/CI_CD.md](docs/CI_CD.md).
 
@@ -109,6 +109,8 @@ Los workflows se encuentran en `.github/workflows/`. Para más información, con
 ## Documentación adicional
 
 - `docs/TallerNext.md`: requerimientos oficiales del taller.
+- `docs/INFORME_FUNCIONALIDADES.md`: **informe detallado de funcionalidades, autenticación, autorización y gestión del estado**.
+- `docs/DocumentacionPruebas.md`: documentación completa del sistema de pruebas.
 - `docs/README-API.md`: guía pública de la API BiblioIcesi.
 - `docs/REPORT-API.md`: informe técnico backend.
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/ckVqWxjG)

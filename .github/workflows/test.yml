@@ -45,7 +45,7 @@ jobs:
         continue-on-error: true
       
       - name: Subir reporte de cobertura como artefacto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-report-${{ matrix.node-version }}
@@ -80,7 +80,7 @@ jobs:
         continue-on-error: true
       
       - name: Subir capturas de pantalla de errores E2E
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-screenshots
