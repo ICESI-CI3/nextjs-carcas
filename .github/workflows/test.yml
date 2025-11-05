@@ -55,7 +55,6 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     
     steps:
       - name: Checkout código
@@ -77,7 +76,6 @@ jobs:
         run: npm run test:e2e
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://nest-1my6.onrender.com/api' }}
-        continue-on-error: true
       
       - name: Subir capturas de pantalla de errores E2E
         uses: actions/upload-artifact@v4
