@@ -57,7 +57,7 @@ describe('Header', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Iniciar sesión')).toBeInTheDocument()
-      expect(screen.getByText('Registrarme')).toBeInTheDocument()
+      expect(screen.getByText('Registrarse')).toBeInTheDocument()
       expect(screen.queryByText('Mis reservas')).not.toBeInTheDocument()
       expect(screen.queryByText('Mis préstamos')).not.toBeInTheDocument()
     })
@@ -107,8 +107,15 @@ describe('Header', () => {
 
     render(<Header />, { wrapper })
 
+    // Wait for auth to initialize (Cerrar sesión button should appear)
     await waitFor(() => {
-      expect(screen.getByText('Panel')).toBeInTheDocument()
+      expect(screen.getByText('Cerrar sesión')).toBeInTheDocument()
+    }, { timeout: 3000 })
+
+    // Then check for Panel link (should be present for ADMIN role - can be in desktop or mobile nav)
+    await waitFor(() => {
+      const panelLinks = screen.getAllByText('Panel')
+      expect(panelLinks.length).toBeGreaterThan(0)
     }, { timeout: 3000 })
   })
 
@@ -119,6 +126,7 @@ describe('Header', () => {
       role: 'LIBRARIAN',
     }
     localStorage.setItem('token', 'test-token')
+    mockAxios.get.mockReset()
     mockAxios.get.mockImplementation((url: string) => {
       if (url === '/users/profile') {
         return Promise.resolve({ data: mockUser })
@@ -128,8 +136,15 @@ describe('Header', () => {
 
     render(<Header />, { wrapper })
 
+    // Wait for auth to initialize (Cerrar sesión button should appear)
     await waitFor(() => {
-      expect(screen.getByText('Panel')).toBeInTheDocument()
+      expect(screen.getByText('Cerrar sesión')).toBeInTheDocument()
+    }, { timeout: 3000 })
+
+    // Then check for Panel link (should be present for LIBRARIAN role - can be in desktop or mobile nav)
+    await waitFor(() => {
+      const panelLinks = screen.getAllByText('Panel')
+      expect(panelLinks.length).toBeGreaterThan(0)
     }, { timeout: 3000 })
   })
 

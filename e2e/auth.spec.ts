@@ -19,7 +19,7 @@ test.describe('Authentication', () => {
   })
 
   test('should navigate to register page', async ({ page }) => {
-    await page.click('text=Registrarme')
+    await page.click('text=Registrarse')
     await expect(page).toHaveURL(/.*register/)
   })
 
